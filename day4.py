@@ -19,13 +19,6 @@ class Passport:
         self.fields: Dict[str, str] = fields
 
     def is_valid(self):
-        def fail(field):
-            print(f"{field} {self.fields[field]} fail")
-
-
-        def fpass(field):
-            print(f"{field} {self.fields[field]} pass")
-
         for m in MANDATORY:
             if m not in self.fields.keys():
                 return False
