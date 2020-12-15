@@ -20,6 +20,13 @@ class PasswordEntry:
         count = self.password.count(self.character)
         return count >= self.lower and count <= self.upper
 
+    @property
+    def valid_part2(self) -> bool:
+        return (
+            bool(self.password[self.lower - 1] == self.character)
+            ^ bool(self.password[self.upper - 1] == self.character)
+        )
+
     @staticmethod
     def from_line(line: str) -> "PasswordEntry":
         m = LINE_REGEX.match(line)
@@ -38,7 +45,7 @@ def get_entries() -> List[PasswordEntry]:
 
 def main():
     entries = get_entries()
-    print(len([e for e in entries if e.valid]))
+    print(len([e for e in entries if e.valid_part2]))
 
 
 if __name__ == "__main__":
