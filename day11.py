@@ -2,7 +2,7 @@
 
 import logging
 from copy import deepcopy
-from typing import List
+from typing import Callable, List, Tuple
 
 import common
 
@@ -17,13 +17,16 @@ class Grid:
 
     def __init__(self, grid: List[List[str]]) -> None:
         self.grid = grid
+        self.width = len(self.grid[0])
+        self.height = len(self.grid)
+        self.TOLERANCE = 4
 
     def occupied(self, row: int, col: int) -> int:
         # before first row or column
         if row < 0 or col < 0:
             return 0
         # after last row or column
-        if row >= len(self.grid) or col >= len(self.grid[0]):
+        if row >= self.height or col >= self.width:
             return 0
         return 1 if self.grid[row][col] == "#" else 0
 
@@ -59,9 +62,6 @@ class Grid:
         current_occupied = -1
         while previous_occupied != current_occupied:
             previous_occupied = current_occupied
-            logging.debug(
-                "previous: %s, current: %s", previous_occupied, current_occupied
-            )
             new_grid: List[List[str]] = self.clone_grid()
             for row, _ in enumerate(self.grid):
                 for col, _ in enumerate(self.grid[row]):
@@ -69,7 +69,10 @@ class Grid:
                         continue
                     if self.occupied(row, col) == 0 and self.adjacent(row, col) == 0:
                         new_grid[row][col] = "#"
-                    if self.occupied(row, col) == 1 and self.adjacent(row, col) >= 4:
+                    if (
+                        self.occupied(row, col) == 1
+                        and self.adjacent(row, col) >= self.TOLERANCE
+                    ):
                         new_grid[row][col] = "L"
             self.grid = new_grid
             current_occupied = self.total_occupied()
@@ -78,8 +81,56 @@ class Grid:
         return "\n".join(["".join(row) for row in self.grid])
 
 
+class Grid2(Grid):
+    def __init__(self, *args) -> None:
+        super().__init__(*args)
+        self.TOLERANCE = 5
+
+    def is_direction_occupied(
+        self, rowcol: Tuple[int, int], delta: Callable[[int, int], Tuple[int, int]]
+    ) -> True:
+        row, col = rowcol
+        in_bounds = row >= 0 and row < self.height and col >= 0 and col < self.width
+        if not in_bounds:
+            return 0
+        seat = self.grid[row][col]
+        if seat == "#":
+            return 1
+        if seat == "L":
+            return 0
+        return self.is_direction_occupied(delta(row, col), delta)
+
+    def adjacent(self, row: int, col: int) -> int:
+        permutations = [
+            lambda row, col: (row - 1, col),  # Up
+            lambda row, col: (row + 1, col),  # Down
+            lambda row, col: (row, col - 1),  # Left
+            lambda row, col: (row, col + 1),  # Right
+            lambda row, col: (row - 1, col - 1),  # Up-Left
+            lambda row, col: (row - 1, col + 1),  # Up-Right
+            lambda row, col: (row + 1, col - 1),  # Down-Left
+            lambda row, col: (row + 1, col + 1),  # Down-Right
+        ]
+        count = 0
+
+        for delta in permutations:
+            c = self.is_direction_occupied(delta(row, col), delta)
+            count += c
+
+        return count
+
+
 def main(input_file: str, dev: bool) -> None:
     grid = Grid(read_grid(input_file))
     grid.run_to_stable()
+    print("\n\nGrid 1")
     print(grid)
     print(f"Occupied {grid.total_occupied()}")
+
+    print("=" * 80)
+
+    grid2 = Grid2(read_grid(input_file))
+    grid2.run_to_stable()
+    print("\n\nGrid 2")
+    print(grid2)
+    print(f"Occupied {grid2.total_occupied()}")
