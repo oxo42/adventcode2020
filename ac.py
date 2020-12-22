@@ -23,7 +23,7 @@ def run(day: str, dev: bool) -> None:
     start = time.perf_counter()
     mod.main(input_file(day, dev), dev)
     end = time.perf_counter()
-    logging.info("Elapsed: %s", (start - end))
+    logging.info("Elapsed: %s", (end - start))
 
 
 if __name__ == "__main__":
